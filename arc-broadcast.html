@@ -1,0 +1,946 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Arc Signal+ — Broadcast Command Center</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #080a0f;
+    --surface: #0d1117;
+    --surface2: #131820;
+    --border: #1e2733;
+    --accent: #e8c84a;
+    --accent2: #4a9fe8;
+    --red: #e84a4a;
+    --text: #c8d4e0;
+    --text-dim: #5a6a7a;
+    --text-bright: #eef2f7;
+    --signal: #4ae87a;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    min-height: 100vh;
+  }
+
+  /* ── HEADER ── */
+  .header {
+    border-bottom: 1px solid var(--border);
+    padding: 0 28px;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    background: var(--bg);
+    z-index: 100;
+  }
+
+  .logo {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 22px;
+    letter-spacing: 3px;
+    color: var(--text-bright);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .logo-signal {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--signal);
+    box-shadow: 0 0 8px var(--signal);
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+
+  .header-right { display: flex; align-items: center; gap: 16px; }
+
+  .broadcast-badge {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--accent);
+    border: 1px solid var(--accent);
+    padding: 3px 8px;
+    letter-spacing: 2px;
+    opacity: 0.8;
+  }
+
+  /* ── API KEY SETUP SCREEN ── */
+  #setup-screen {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: calc(100vh - 56px);
+    padding: 40px 20px;
+  }
+
+  .setup-box {
+    max-width: 480px;
+    width: 100%;
+    border: 1px solid var(--border);
+    padding: 40px;
+    background: var(--surface);
+  }
+
+  .setup-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 32px;
+    letter-spacing: 2px;
+    color: var(--text-bright);
+    margin-bottom: 8px;
+  }
+
+  .setup-sub {
+    font-size: 13px;
+    color: var(--text-dim);
+    margin-bottom: 32px;
+    line-height: 1.6;
+  }
+
+  .setup-sub a {
+    color: var(--accent);
+    text-decoration: none;
+  }
+
+  .setup-note {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent2);
+    padding: 12px 16px;
+    font-size: 12px;
+    color: var(--text-dim);
+    margin-top: 16px;
+    line-height: 1.6;
+  }
+
+  /* ── NAV ── */
+  .nav {
+    display: flex;
+    gap: 2px;
+    padding: 16px 28px 0;
+    border-bottom: 1px solid var(--border);
+    overflow-x: auto;
+  }
+
+  .nav-tab {
+    background: none;
+    border: none;
+    color: var(--text-dim);
+    font-family: 'Inter', sans-serif;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    padding: 10px 16px;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+
+  .nav-tab:hover { color: var(--text); }
+  .nav-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  /* ── MAIN ── */
+  .main { padding: 28px; max-width: 900px; margin: 0 auto; }
+
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  /* ── MODULE HEADER ── */
+  .module-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 24px;
+  }
+
+  .module-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 28px;
+    letter-spacing: 2px;
+    color: var(--text-bright);
+    line-height: 1;
+  }
+
+  .module-sub {
+    font-size: 12px;
+    color: var(--text-dim);
+    margin-top: 6px;
+    letter-spacing: 0.5px;
+  }
+
+  /* ── FORMS ── */
+  .field-group { margin-bottom: 18px; }
+
+  .field-label {
+    display: block;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    margin-bottom: 8px;
+  }
+
+  input[type="text"],
+  input[type="password"],
+  textarea,
+  select {
+    width: 100%;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text-bright);
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    padding: 12px 14px;
+    outline: none;
+    transition: border-color 0.2s;
+    resize: vertical;
+  }
+
+  input:focus, textarea:focus, select:focus { border-color: var(--accent); }
+  select option { background: var(--surface2); }
+  textarea { min-height: 100px; line-height: 1.6; }
+
+  .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+  /* ── BUTTONS ── */
+  .btn-primary {
+    background: var(--accent);
+    color: #000;
+    border: none;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 16px;
+    letter-spacing: 2px;
+    padding: 12px 28px;
+    cursor: pointer;
+    transition: all 0.2s;
+    width: 100%;
+  }
+
+  .btn-primary:hover { background: #f5d866; }
+  .btn-primary:disabled { background: var(--border); color: var(--text-dim); cursor: not-allowed; }
+
+  .btn-ghost {
+    background: transparent;
+    color: var(--text-dim);
+    border: 1px solid var(--border);
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 13px;
+    letter-spacing: 1.5px;
+    padding: 8px 16px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .btn-ghost:hover { border-color: var(--text-dim); color: var(--text); }
+
+  /* ── OUTPUT ── */
+  .output-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent);
+    padding: 20px;
+    margin-top: 20px;
+    display: none;
+  }
+
+  .output-box.visible { display: block; }
+
+  .output-label {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .copy-btn {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 1px;
+    padding: 3px 8px;
+    cursor: pointer;
+    text-transform: uppercase;
+    transition: all 0.2s;
+  }
+
+  .copy-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+  .output-content {
+    font-size: 14px;
+    color: var(--text-bright);
+    line-height: 1.8;
+  }
+
+  .output-content h3 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 17px;
+    letter-spacing: 1.5px;
+    color: var(--accent);
+    margin: 16px 0 6px;
+  }
+
+  .output-content strong { color: var(--accent); font-weight: 600; }
+  .output-content p { margin-bottom: 10px; }
+  .output-content ul { padding-left: 20px; margin-bottom: 10px; }
+  .output-content li { margin-bottom: 4px; }
+
+  /* ── LOADING ── */
+  .loading-bar {
+    height: 2px;
+    background: var(--border);
+    margin-top: 16px;
+    display: none;
+    overflow: hidden;
+  }
+
+  .loading-bar.visible { display: block; }
+
+  .loading-fill {
+    height: 100%;
+    background: var(--accent);
+    animation: load 1.8s ease-in-out infinite;
+  }
+
+  @keyframes load {
+    0% { width: 0%; margin-left: 0; }
+    50% { width: 60%; margin-left: 20%; }
+    100% { width: 0%; margin-left: 100%; }
+  }
+
+  /* ── QUICK CARDS ── */
+  .quick-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+
+  .quick-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 16px;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: left;
+  }
+
+  .quick-card:hover { border-color: var(--accent); }
+
+  .quick-card-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 16px;
+    letter-spacing: 1.5px;
+    color: var(--text-bright);
+    margin-bottom: 4px;
+  }
+
+  .quick-card-desc {
+    font-size: 11px;
+    color: var(--text-dim);
+    line-height: 1.5;
+  }
+
+  .tag {
+    display: inline-block;
+    font-size: 9px;
+    font-family: 'JetBrains Mono', monospace;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    padding: 2px 6px;
+    border: 1px solid;
+    margin-bottom: 8px;
+  }
+
+  .tag-yellow { color: var(--accent); border-color: var(--accent); }
+  .tag-blue { color: var(--accent2); border-color: var(--accent2); }
+  .tag-red { color: var(--red); border-color: var(--red); }
+  .tag-green { color: var(--signal); border-color: var(--signal); }
+
+  /* ── API KEY BAR ── */
+  .api-bar {
+    background: var(--surface2);
+    border-bottom: 1px solid var(--border);
+    padding: 8px 28px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 11px;
+    color: var(--text-dim);
+  }
+
+  .api-status {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .api-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--signal);
+  }
+
+  .api-dot.off { background: var(--red); }
+
+  /* ── SCROLLBAR ── */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border); }
+
+  @media (max-width: 600px) {
+    .row-2 { grid-template-columns: 1fr; }
+    .quick-grid { grid-template-columns: 1fr; }
+    .main { padding: 16px; }
+    .header { padding: 0 16px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="header">
+  <div class="logo">
+    <div class="logo-signal"></div>
+    ARC SIGNAL+
+  </div>
+  <div class="header-right">
+    <span class="broadcast-badge">◉ BROADCAST SYSTEM</span>
+  </div>
+</header>
+
+<!-- SETUP SCREEN (shown before API key is entered) -->
+<div id="setup-screen">
+  <div class="setup-box">
+    <div class="setup-title">Connect Your Signal</div>
+    <div class="setup-sub">
+      Enter your Anthropic API key to activate the Arc Broadcast Command Center.<br><br>
+      Get a free key at <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a> → API Keys.
+    </div>
+
+    <div class="field-group">
+      <label class="field-label">Anthropic API Key</label>
+      <input type="password" id="api-key-input" placeholder="sk-ant-...">
+    </div>
+
+    <button class="btn-primary" onclick="activateSystem()">◉ ACTIVATE BROADCAST SYSTEM</button>
+
+    <div class="setup-note">
+      🔒 Your key is stored only in your browser's local memory for this session. It is never sent anywhere except directly to Anthropic's API. This app has no backend server.
+    </div>
+  </div>
+</div>
+
+<!-- MAIN APP (hidden until API key entered) -->
+<div id="app" style="display:none;">
+
+  <div class="api-bar">
+    <div class="api-status">
+      <div class="api-dot" id="api-dot"></div>
+      <span id="api-status-text">Signal active</span>
+    </div>
+    <button class="btn-ghost" onclick="resetKey()">CHANGE API KEY</button>
+  </div>
+
+  <nav class="nav">
+    <button class="nav-tab active" data-tab="command" onclick="switchTab(this, 'command')">Command Center</button>
+    <button class="nav-tab" data-tab="titles" onclick="switchTab(this, 'titles')">Title & SEO</button>
+    <button class="nav-tab" data-tab="script" onclick="switchTab(this, 'script')">Episode Structure</button>
+    <button class="nav-tab" data-tab="trailer" onclick="switchTab(this, 'trailer')">Trailer Writer</button>
+    <button class="nav-tab" data-tab="audit" onclick="switchTab(this, 'audit')">Episode Audit</button>
+  </nav>
+
+  <main class="main">
+
+    <!-- COMMAND CENTER -->
+    <div id="panel-command" class="panel active">
+      <div class="module-header">
+        <div>
+          <div class="module-title">Command Center</div>
+          <div class="module-sub">Your AI showrunner. Ask anything about Arc Signal+.</div>
+        </div>
+      </div>
+
+      <div class="quick-grid">
+        <div class="quick-card" onclick="quickFire('Give me a detailed cold start strategy to grow Arc Signal+ from zero — what should I post in the first 30 days to feed the YouTube algorithm and build an initial audience for a cinematic long-form gaming channel?')">
+          <div class="tag tag-yellow">Growth</div>
+          <div class="quick-card-title">30-Day Launch Plan</div>
+          <div class="quick-card-desc">First month content strategy to break zero.</div>
+        </div>
+        <div class="quick-card" onclick="quickFire('Write a cinematic 90-second channel trailer script for Arc Signal+. No talking heads, no face cam, no commentary. Pure atmosphere and story. Tone: premium streamer like Netflix. Include scene descriptions, music cues, and on-screen text.')">
+          <div class="tag tag-blue">Production</div>
+          <div class="quick-card-title">Channel Trailer Script</div>
+          <div class="quick-card-desc">90-second autoplay trailer, no filler.</div>
+        </div>
+        <div class="quick-card" onclick="quickFire('What are the top 10 low-competition, high-intent YouTube SEO keywords and search terms I should target for a cinematic no-commentary longplay gaming channel in 2025? Focus on terms that big channels ignore but dedicated viewers search for.')">
+          <div class="tag tag-green">SEO</div>
+          <div class="quick-card-title">SEO Keyword Map</div>
+          <div class="quick-card-desc">Low-competition terms to beat established channels.</div>
+        </div>
+        <div class="quick-card" onclick="quickFire('Critique the Arc Signal+ brand positioning as a Lead Showrunner. The channel is positioned as cinematic serialized gaming content, like Netflix for gameplay. What would a real streaming network do differently? Be brutally honest about the weaknesses and blind spots.')">
+          <div class="tag tag-red">Audit</div>
+          <div class="quick-card-title">Brand Critique</div>
+          <div class="quick-card-desc">Brutal honest review of the current direction.</div>
+        </div>
+      </div>
+
+      <div class="field-group">
+        <label class="field-label">Broadcast to Showrunner</label>
+        <textarea id="command-input" placeholder="Ask your showrunner anything… 'How do I structure the first episode of a God of War series?' / 'Write a cliffhanger ending for episode 3' / 'What thumbnail style works for cinematic gaming content?'" style="min-height: 80px;"></textarea>
+      </div>
+
+      <button class="btn-primary" id="command-btn" onclick="runCommand()">◉ SEND TO SHOWRUNNER</button>
+      <div class="loading-bar" id="command-loading"><div class="loading-fill"></div></div>
+      <div class="output-box" id="command-output">
+        <div class="output-label">
+          ◈ SHOWRUNNER RESPONSE
+          <button class="copy-btn" onclick="copyOutput('command-result')">Copy</button>
+        </div>
+        <div class="output-content" id="command-result"></div>
+      </div>
+    </div>
+
+    <!-- TITLE & SEO -->
+    <div id="panel-titles" class="panel">
+      <div class="module-header">
+        <div>
+          <div class="module-title">Title & SEO Generator</div>
+          <div class="module-sub">Cinematic titles. Netflix gravity. Zero clickbait.</div>
+        </div>
+      </div>
+
+      <div class="row-2">
+        <div class="field-group">
+          <label class="field-label">Game Title</label>
+          <input type="text" id="seo-game" placeholder="e.g. The Last of Us Part II">
+        </div>
+        <div class="field-group">
+          <label class="field-label">Episode / Arc</label>
+          <input type="text" id="seo-episode" placeholder="e.g. Episode 3 — The Outskirts">
+        </div>
+      </div>
+
+      <div class="field-group">
+        <label class="field-label">What happens in this episode?</label>
+        <textarea id="seo-summary" placeholder="e.g. Ellie enters a quarantine zone. First major encounter with the WLF. Emotional flashback reveal at the end." style="min-height: 80px;"></textarea>
+      </div>
+
+      <div class="field-group">
+        <label class="field-label">Tone</label>
+        <select id="seo-tone">
+          <option value="cinematic and serious">Cinematic & Serious</option>
+          <option value="suspenseful and dark">Suspenseful & Dark</option>
+          <option value="emotional and dramatic">Emotional & Dramatic</option>
+          <option value="epic and grand">Epic & Grand</option>
+          <option value="mystery and intrigue">Mystery & Intrigue</option>
+        </select>
+      </div>
+
+      <button class="btn-primary" id="seo-btn" onclick="runSEO()">◉ GENERATE TITLES + TAGS + DESCRIPTION</button>
+      <div class="loading-bar" id="seo-loading"><div class="loading-fill"></div></div>
+      <div class="output-box" id="seo-output">
+        <div class="output-label">
+          ◈ BROADCAST PACKAGE
+          <button class="copy-btn" onclick="copyOutput('seo-result')">Copy</button>
+        </div>
+        <div class="output-content" id="seo-result"></div>
+      </div>
+    </div>
+
+    <!-- EPISODE STRUCTURE -->
+    <div id="panel-script" class="panel">
+      <div class="module-header">
+        <div>
+          <div class="module-title">Episode Structure</div>
+          <div class="module-sub">Build your episode like a Netflix showrunner would.</div>
+        </div>
+      </div>
+
+      <div class="row-2">
+        <div class="field-group">
+          <label class="field-label">Game / Series</label>
+          <input type="text" id="sc-game" placeholder="e.g. Silent Hill 2">
+        </div>
+        <div class="field-group">
+          <label class="field-label">Episode Number</label>
+          <input type="text" id="sc-ep" placeholder="e.g. Episode 01">
+        </div>
+      </div>
+
+      <div class="field-group">
+        <label class="field-label">Raw gameplay notes — what happens?</label>
+        <textarea id="sc-notes" placeholder="Dump everything here. What scenes are in this episode? What's the emotional arc? Key moments, discoveries, boss fights, narrative reveals?"></textarea>
+      </div>
+
+      <div class="field-group">
+        <label class="field-label">Episode Length (approx)</label>
+        <select id="sc-length">
+          <option value="30–45 minutes">30–45 min</option>
+          <option value="45–60 minutes">45–60 min</option>
+          <option value="60–90 minutes">60–90 min</option>
+          <option value="90–120 minutes">90–120 min</option>
+          <option value="2+ hours">2+ hours</option>
+        </select>
+      </div>
+
+      <button class="btn-primary" id="sc-btn" onclick="runScript()">◉ BUILD EPISODE STRUCTURE</button>
+      <div class="loading-bar" id="sc-loading"><div class="loading-fill"></div></div>
+      <div class="output-box" id="sc-output">
+        <div class="output-label">
+          ◈ EPISODE STRUCTURE
+          <button class="copy-btn" onclick="copyOutput('sc-result')">Copy</button>
+        </div>
+        <div class="output-content" id="sc-result"></div>
+      </div>
+    </div>
+
+    <!-- TRAILER WRITER -->
+    <div id="panel-trailer" class="panel">
+      <div class="module-header">
+        <div>
+          <div class="module-title">Trailer Script Writer</div>
+          <div class="module-sub">Season trailers. Episode teasers. Cold opens. Pure cinema.</div>
+        </div>
+      </div>
+
+      <div class="row-2">
+        <div class="field-group">
+          <label class="field-label">Series / Game</label>
+          <input type="text" id="tr-game" placeholder="e.g. God of War Ragnarök">
+        </div>
+        <div class="field-group">
+          <label class="field-label">Trailer Type</label>
+          <select id="tr-type">
+            <option value="channel trailer (no commentary, pure atmosphere, 90 seconds)">Channel Trailer</option>
+            <option value="season premiere trailer (60–90 seconds, build suspense)">Season Premiere Trailer</option>
+            <option value="episode cold open (30–45 seconds, hook before the title card)">Episode Cold Open</option>
+            <option value="mid-season teaser (30 seconds, cliffhanger energy)">Mid-Season Teaser</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="field-group">
+        <label class="field-label">Key themes, moments, or emotional beats</label>
+        <textarea id="tr-beats" placeholder="e.g. Father-son tension. The cost of vengeance. Norse mythology colliding with grief. First glimpse of Atreus as Loki."></textarea>
+      </div>
+
+      <div class="field-group">
+        <label class="field-label">Music / Atmosphere Direction</label>
+        <input type="text" id="tr-music" placeholder="e.g. Slow orchestral build, silence before the drop, dark ambient electronic">
+      </div>
+
+      <button class="btn-primary" id="tr-btn" onclick="runTrailer()">◉ WRITE TRAILER SCRIPT</button>
+      <div class="loading-bar" id="tr-loading"><div class="loading-fill"></div></div>
+      <div class="output-box" id="tr-output">
+        <div class="output-label">
+          ◈ TRAILER SCRIPT
+          <button class="copy-btn" onclick="copyOutput('tr-result')">Copy</button>
+        </div>
+        <div class="output-content" id="tr-result"></div>
+      </div>
+    </div>
+
+    <!-- EPISODE AUDIT -->
+    <div id="panel-audit" class="panel">
+      <div class="module-header">
+        <div>
+          <div class="module-title">Episode Audit</div>
+          <div class="module-sub">Run your episode through the Netflix Framework.</div>
+        </div>
+      </div>
+
+      <div class="field-group">
+        <label class="field-label">Episode Title</label>
+        <input type="text" id="au-title" placeholder="e.g. ARC: The Last of Us — Episode 04">
+      </div>
+
+      <div class="field-group">
+        <label class="field-label">Describe your episode in detail</label>
+        <textarea id="au-desc" placeholder="How does it open? What happens in the middle? How does it end? What editing choices did you make? What concerns do you have about pacing or immersion?" style="min-height: 140px;"></textarea>
+      </div>
+
+      <div class="field-group">
+        <label class="field-label">Focus Area</label>
+        <select id="au-focus">
+          <option value="full cinematic audit">Full Cinematic Audit</option>
+          <option value="pacing and binge-factor">Pacing & Binge Factor</option>
+          <option value="cold open and hook">Cold Open & Hook</option>
+          <option value="cliffhanger and episode ending">Cliffhanger & Ending</option>
+          <option value="thumbnail and title alignment">Thumbnail & Title</option>
+          <option value="YouTuber habits to identify and eliminate">YouTuber Habits to Cut</option>
+        </select>
+      </div>
+
+      <button class="btn-primary" id="au-btn" onclick="runAudit()">◉ RUN NETFLIX AUDIT</button>
+      <div class="loading-bar" id="au-loading"><div class="loading-fill"></div></div>
+      <div class="output-box" id="au-output">
+        <div class="output-label">
+          ◈ AUDIT REPORT
+          <button class="copy-btn" onclick="copyOutput('au-result')">Copy</button>
+        </div>
+        <div class="output-content" id="au-result"></div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<script>
+  const SYSTEM_PROMPT = `You are the Lead Showrunner and Senior Cinematic Editor for Arc Signal Plus — a YouTube channel that produces gameplay as premium, binge-worthy cinematic series modeled after Netflix and Crunchyroll.
+
+Your philosophy:
+- Every upload is a "Series Episode," not a video
+- You avoid all "loud/gimmicky" YouTube tropes
+- You prioritize immersion, suspense, narrative arcs, and emotional beats
+- You evaluate everything through the "Netflix Framework": hook, cliffhanger, no-filler storytelling
+- You are brutally honest and cinematically precise
+- You speak like a senior creative director, not a YouTube coach
+
+Arc Signal+ brand identity: Premium. Serialized. Cinematic. Dark aesthetic. No commentary. Games experienced as full stories.
+
+When responding, be direct, structured, and actionable. Use clear sections with headers. No fluff. Treat every session as a production day.`;
+
+  let apiKey = '';
+
+  function activateSystem() {
+    const key = document.getElementById('api-key-input').value.trim();
+    if (!key.startsWith('sk-ant-')) {
+      alert('Please enter a valid Anthropic API key (starts with sk-ant-)');
+      return;
+    }
+    apiKey = key;
+    document.getElementById('setup-screen').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+  }
+
+  function resetKey() {
+    apiKey = '';
+    document.getElementById('api-key-input').value = '';
+    document.getElementById('setup-screen').style.display = 'flex';
+    document.getElementById('app').style.display = 'none';
+  }
+
+  function switchTab(el, name) {
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+    document.getElementById('panel-' + name).classList.add('active');
+    el.classList.add('active');
+  }
+
+  function formatOutput(text) {
+    return text
+      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+      .replace(/^### (.*$)/gm, '<h3>$1</h3>')
+      .replace(/^## (.*$)/gm, '<h3>$1</h3>')
+      .replace(/^# (.*$)/gm, '<h3>$1</h3>')
+      .replace(/\n/g, '<br>');
+  }
+
+  async function callAI(userMessage, outputId, loadingId, btnId) {
+    const btn = document.getElementById(btnId);
+    const loading = document.getElementById(loadingId);
+    const output = document.getElementById(outputId);
+    const resultId = outputId.replace('-output', '-result');
+    const result = document.getElementById(resultId);
+
+    btn.disabled = true;
+    loading.classList.add('visible');
+    output.classList.remove('visible');
+
+    try {
+      const response = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': apiKey,
+          'anthropic-version': '2023-06-01',
+          'anthropic-dangerous-direct-browser-access': 'true'
+        },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-6',
+          max_tokens: 1000,
+          system: SYSTEM_PROMPT,
+          messages: [{ role: 'user', content: userMessage }]
+        })
+      });
+
+      if (!response.ok) {
+        const err = await response.json();
+        throw new Error(err.error?.message || 'API error');
+      }
+
+      const data = await response.json();
+      const text = data.content?.map(b => b.text || '').join('') || 'No response received.';
+      result.innerHTML = formatOutput(text);
+      output.classList.add('visible');
+    } catch (err) {
+      result.innerHTML = `<strong>Signal lost.</strong><br>${err.message}`;
+      output.classList.add('visible');
+    }
+
+    btn.disabled = false;
+    loading.classList.remove('visible');
+  }
+
+  function quickFire(prompt) {
+    document.getElementById('command-input').value = prompt;
+    document.querySelectorAll('.nav-tab')[0].click();
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+    document.getElementById('panel-command').classList.add('active');
+    document.querySelectorAll('.nav-tab')[0].classList.add('active');
+    runCommand();
+  }
+
+  function runCommand() {
+    const input = document.getElementById('command-input').value.trim();
+    if (!input) return;
+    callAI(input, 'command-output', 'command-loading', 'command-btn');
+  }
+
+  function runSEO() {
+    const game = document.getElementById('seo-game').value.trim();
+    const episode = document.getElementById('seo-episode').value.trim();
+    const summary = document.getElementById('seo-summary').value.trim();
+    const tone = document.getElementById('seo-tone').value;
+    if (!game) { alert('Enter the game title.'); return; }
+
+    const prompt = `Generate a complete YouTube broadcast package for Arc Signal+ with a ${tone} tone.
+
+Game: ${game}
+Episode: ${episode || 'Not specified'}
+What happens: ${summary || 'Not specified'}
+
+Deliver:
+1. 5 cinematic episode title options (no clickbait — premium streamer energy)
+2. YouTube description (3 paragraphs: hook, episode context, series CTA — no hashtag spam)
+3. 15 SEO tags (mix of long-tail low-competition and series-specific)
+4. Thumbnail concept direction (one sentence visual direction)
+
+Format each section with a clear header.`;
+
+    callAI(prompt, 'seo-output', 'seo-loading', 'seo-btn');
+  }
+
+  function runScript() {
+    const game = document.getElementById('sc-game').value.trim();
+    const ep = document.getElementById('sc-ep').value.trim();
+    const notes = document.getElementById('sc-notes').value.trim();
+    const length = document.getElementById('sc-length').value;
+    if (!game || !notes) { alert('Enter the game and gameplay notes.'); return; }
+
+    const prompt = `Build a cinematic episode structure for Arc Signal+.
+
+Series: ${game}
+Episode: ${ep || 'Episode 01'}
+Target length: ${length}
+Raw gameplay notes: ${notes}
+
+Structure as:
+1. COLD OPEN — what scene hooks the viewer in the first 30 seconds
+2. ACT 1 — ESTABLISH — narrative setup, world-building moments
+3. ACT 2 — ESCALATE — rising tension, key gameplay moments, emotional beats
+4. ACT 3 — PEAK — climax moment: boss fight, revelation, confrontation
+5. EPISODE END / CLIFFHANGER — what drives the binge to next episode
+6. EDITING NOTES — 5 specific cinematic editing recommendations for this episode
+
+Be specific. Cut anything that doesn't serve the story.`;
+
+    callAI(prompt, 'sc-output', 'sc-loading', 'sc-btn');
+  }
+
+  function runTrailer() {
+    const game = document.getElementById('tr-game').value.trim();
+    const type = document.getElementById('tr-type').value;
+    const beats = document.getElementById('tr-beats').value.trim();
+    const music = document.getElementById('tr-music').value.trim();
+    if (!game) { alert('Enter the game or series name.'); return; }
+
+    const prompt = `Write a ${type} script for Arc Signal+ for the series: ${game}.
+
+Key themes and moments: ${beats || 'Use your creative direction'}
+Music/atmosphere: ${music || 'Your choice — make it cinematic'}
+
+Format as a production script:
+- Scene descriptions in [brackets]
+- On-screen text in CAPS
+- Music cues clearly labeled
+- Timing indicators per scene
+- No voiceover unless game audio provides it
+- Zero YouTuber energy — pure Netflix/A24 atmosphere
+
+The script should feel like a real streaming platform trailer, not a gaming video.`;
+
+    callAI(prompt, 'tr-output', 'tr-loading', 'tr-btn');
+  }
+
+  function runAudit() {
+    const title = document.getElementById('au-title').value.trim();
+    const desc = document.getElementById('au-desc').value.trim();
+    const focus = document.getElementById('au-focus').value;
+    if (!desc) { alert('Describe your episode first.'); return; }
+
+    const prompt = `Run a ${focus} on this Arc Signal+ episode.
+
+Episode: ${title || 'Untitled'}
+Description: ${desc}
+
+Evaluate through the Netflix Framework. Score each dimension 1–10:
+- Hook Score: does it land in the first 30 seconds?
+- Pacing Score: does it hold to the no-filler standard?
+- Cliffhanger Score: does the ending drive the binge?
+- Cinematic Depth Score: does it feel like a series, not a video?
+
+Then:
+- List specific "YouTuber habits" that break immersion (be ruthless)
+- Give the top 3 immediate improvements with specific instructions
+
+Be a demanding showrunner, not a cheerleader.`;
+
+    callAI(prompt, 'au-output', 'au-loading', 'au-btn');
+  }
+
+  function copyOutput(id) {
+    const el = document.getElementById(id);
+    const text = el.innerText;
+    navigator.clipboard.writeText(text).then(() => {
+      const btn = el.closest('.output-box').querySelector('.copy-btn');
+      btn.textContent = 'Copied!';
+      setTimeout(() => btn.textContent = 'Copy', 2000);
+    });
+  }
+
+  // Ctrl+Enter to send in command center
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && e.ctrlKey) {
+      const active = document.querySelector('.panel.active');
+      if (active && active.id === 'panel-command') runCommand();
+    }
+  });
+</script>
+</body>
+</html>
